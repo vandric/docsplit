@@ -127,12 +127,14 @@ module Docsplit
         else
           if libre_office?
             # Set the LibreOffice user profile, so that parallel uses of cloudcrowd don't trip over each other.
-            ENV['SYSUSERCONFIG']="file://#{File.expand_path(escaped_out)}"
-            
-            options = "--headless --invisible  --norestore --nolockcheck --convert-to pdf --outdir #{escaped_out} #{escaped_doc}"
-            cmd = "#{office_executable} #{options} 2>&1"
-            result = `#{cmd}`.chomp
-            raise ExtractionFailed, result if $? != 0
+            Dir.mktmpdir do |tmp_sys_dir|
+              ENV['SYSUSERCONFIG']="file://#{tmp_sys_dir}"
+
+              options = "--headless --invisible  --norestore --nolockcheck --convert-to pdf --outdir #{escaped_out} #{escaped_doc}"
+              cmd = "#{office_executable} #{options} 2>&1"
+              result = `#{cmd}`.chomp
+              raise ExtractionFailed, result if $? != 0
+            end
             true
           else # open office presumably, rely on JODConverter to figure it out.
             options = "-jar #{ESCAPED_ROOT}/vendor/jodconverter/jodconverter-core-3.0-beta-4.jar -r #{ESCAPED_ROOT}/vendor/conf/document-formats.js"
