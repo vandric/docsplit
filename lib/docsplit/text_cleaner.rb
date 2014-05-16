@@ -36,7 +36,7 @@ module Docsplit
     # multibyte-aware version, coercing to ASCII first.
     def clean(text)
       if String.method_defined?(:encode)
-        text.encode!('ascii', :invalid => :replace, :undef => :replace, :replace => '?')
+        text.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '?')
       else
         require 'iconv' unless defined?(Iconv)
         text = Iconv.iconv('ascii//translit//ignore', 'utf-8', text).first
