@@ -38,12 +38,12 @@ module Docsplit
       timeout   = 5.minutes.to_i
       if previous
         FileUtils.cp(Dir[directory_for(previous) + '/*'], directory)
-        result = `MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm mogrify #{common} -unsharp 0x0.5+0.75 \"#{directory}/*.#{format}\" 2>/dev/null`.chomp
+        result = `MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm mogrify #{common} -unsharp 0x0.5+0.75 \"#{directory}/*.#{format}\" 2>&1 | grep -v '^$' | uniq`.chomp
         raise ExtractionFailed, result if $? != 0
       else
         page_list(pages).each do |page|
           out_file  = ESCAPE[File.join(directory, "#{basename}_#{page}.#{format}")]
-          cmd = "MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm convert +adjoin -define pdf:use-cropbox=true #{common} #{escaped_pdf}[#{page - 1}] #{out_file} 2>/dev/null".chomp
+          cmd = "MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm convert +adjoin -define pdf:use-cropbox=true #{common} #{escaped_pdf}[#{page - 1}] #{out_file} 2>&1 | grep -v '^$' | uniq".chomp
           result = `#{cmd}`.chomp
           raise ExtractionFailed, result if $? != 0
         end
