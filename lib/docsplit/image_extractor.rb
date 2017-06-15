@@ -38,6 +38,9 @@ module Docsplit
       timeout   = 5.minutes.to_i
       if previous
         FileUtils.cp(Dir[directory_for(previous) + '/*'], directory)
+        # We're adding `| grep -v '^$' | uniq` here and below because if a corrupt PDF is parsed, it generates an infinite amount of identical warnings (with blank lines in between).
+        # By filtering these we avoid memory bloat when the executing process tries to capture stdout.
+        # See https://github.com/GetSilverfin/silverfin/issues/1998
         result = `MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm mogrify #{common} -unsharp 0x0.5+0.75 \"#{directory}/*.#{format}\" 2>&1 | grep -v '^$' | uniq`.chomp
         raise ExtractionFailed, result if $? != 0
       else
