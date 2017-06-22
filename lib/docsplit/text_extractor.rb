@@ -13,6 +13,7 @@ module Docsplit
   #  * Re-OCR each page in the `@pages_to_ocr` list at the end.
   #
   class TextExtractor
+    include ExternalProcess
 
     NO_TEXT_DETECTED = /---------\n\Z/
 
@@ -62,22 +63,24 @@ module Docsplit
       escaped_pdf = ESCAPE[pdf]
       psm = @detect_orientation ? "-psm 1" : ""
       timeout = 5.minutes.to_i
+      env = "MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2"
+
       if pages
         pages.each do |page|
           tiff = "#{tempdir}/#{@pdf_name}_#{page}.tif"
           escaped_tiff = ESCAPE[tiff]
           file = "#{base_path}_#{page}"
-          run "MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm convert -despeckle +adjoin #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf}[#{page - 1}] #{escaped_tiff} 2>&1"
-          run "timeout #{timeout} tesseract #{escaped_tiff} #{ESCAPE[file]} -l #{@language} #{psm} 2>&1"
+          run("gm convert -despeckle +adjoin #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf}[#{page - 1}] #{escaped_tiff} 2>&1", env)
+          run("tesseract #{escaped_tiff} #{ESCAPE[file]} -l #{@language} #{psm} 2>&1")
           clean_text(file + '.txt') if @clean_ocr
           FileUtils.remove_entry_secure tiff
         end
       else
         tiff = "#{tempdir}/#{@pdf_name}.tif"
         escaped_tiff = ESCAPE[tiff]
-        run "MAGICK_TMPDIR=#{tempdir} OMP_NUM_THREADS=2 timeout #{timeout} gm convert -despeckle #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf} #{escaped_tiff} 2>&1"
+        run("gm convert -despeckle #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf} #{escaped_tiff} 2>&1", env)
         #if the user says don't do orientation detection or the plugin is not installed, set psm to 0
-        run "timeout #{timeout} tesseract #{escaped_tiff} #{ESCAPE[base_path]} -l #{@language} #{psm} 2>&1"
+        run("tesseract #{escaped_tiff} #{ESCAPE[base_path]} -l #{@language} #{psm} 2>&1")
         clean_text(base_path + '.txt') if @clean_ocr
       end
     ensure
@@ -94,13 +97,6 @@ module Docsplit
         f.rewind
         f.write(Docsplit.clean_text(text))
       end
-    end
-
-    # Run an external process and raise an exception if it fails.
-    def run(command)
-      result = `#{command}`
-      raise ExtractionFailed, result if $? != 0
-      result
     end
 
     # Extract the full contents of a pdf as a single file, directly.
