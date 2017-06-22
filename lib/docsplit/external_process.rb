@@ -3,7 +3,7 @@ module Docsplit
     COMMAND_TIMEOUT = 300 # seconds
 
     # Run an external process and raise an exception if it fails.
-    def run(env, command)
+    def run(command, env = "")
       # If a corrupt PDF is parsed, it generates an infinite amount of identical warnings (with blank lines in between).
       # By filtering these we avoid memory bloat when the executing process tries to capture stdout. The timeout makes
       # sure we exit at some point.
