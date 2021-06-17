@@ -45,11 +45,11 @@ module Docsplit
         # By filtering these we avoid memory bloat when the executing process tries to capture stdout.
         # See https://github.com/GetSilverfin/silverfin/issues/1998
 
-        run("gm mogrify #{common} -unsharp 0x0.5+0.75 \"#{directory}/*.#{format}\" 2>&1", env)
+        run("gm mogrify #{common} -unsharp 0x0.5+0.75 \"#{directory}/*.#{format}\" 2>&1", env, DEFAULT_TIMEOUT)
       else
         page_list(pages).each do |page|
           out_file = ESCAPE[File.join(directory, "#{basename}_#{page}.#{format}")]
-          run("gm convert +adjoin -define pdf:use-cropbox=true #{common} #{escaped_pdf}[#{page - 1}] #{out_file} 2>&1", env)
+          run("gm convert +adjoin -define pdf:use-cropbox=true #{common} #{escaped_pdf}[#{page - 1}] #{out_file} 2>&1", env, DEFAULT_TIMEOUT)
         end
       end
     ensure

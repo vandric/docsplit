@@ -70,17 +70,17 @@ module Docsplit
           tiff = "#{tempdir}/#{@pdf_name}_#{page}.tif"
           escaped_tiff = ESCAPE[tiff]
           file = "#{base_path}_#{page}"
-          run("gm convert -despeckle +adjoin #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf}[#{page - 1}] #{escaped_tiff} 2>&1", env)
-          run("tesseract #{escaped_tiff} #{ESCAPE[file]} -l #{@language} #{psm} 2>&1")
+          run("gm convert -despeckle +adjoin #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf}[#{page - 1}] #{escaped_tiff} 2>&1", env, DEFAULT_TIMEOUT)
+          run("tesseract #{escaped_tiff} #{ESCAPE[file]} -l #{@language} #{psm} 2>&1", "", DEFAULT_TIMEOUT)
           clean_text(file + '.txt') if @clean_ocr
           FileUtils.remove_entry_secure tiff
         end
       else
         tiff = "#{tempdir}/#{@pdf_name}.tif"
         escaped_tiff = ESCAPE[tiff]
-        run("gm convert -despeckle #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf} #{escaped_tiff} 2>&1", env)
+        run("gm convert -despeckle #{MEMORY_ARGS} #{OCR_FLAGS} #{escaped_pdf} #{escaped_tiff} 2>&1", env, DEFAULT_TIMEOUT)
         #if the user says don't do orientation detection or the plugin is not installed, set psm to 0
-        run("tesseract #{escaped_tiff} #{ESCAPE[base_path]} -l #{@language} #{psm} 2>&1")
+        run("tesseract #{escaped_tiff} #{ESCAPE[base_path]} -l #{@language} #{psm} 2>&1", "", DEFAULT_TIMEOUT)
         clean_text(base_path + '.txt') if @clean_ocr
       end
     ensure
@@ -102,14 +102,14 @@ module Docsplit
     # Extract the full contents of a pdf as a single file, directly.
     def extract_full(pdf)
       text_path = File.join(@output, "#{@pdf_name}.txt")
-      run "pdftotext -enc UTF-8 #{ESCAPE[pdf]} #{ESCAPE[text_path]} 2>&1"
+      run "pdftotext -enc UTF-8 #{ESCAPE[pdf]} #{ESCAPE[text_path]} 2>&1", "", DEFAULT_TIMEOUT
     end
 
     # Extract the contents of a single page of text, directly, adding it to
     # the `@pages_to_ocr` list if the text length is inadequate.
     def extract_page(pdf, page)
       text_path = File.join(@output, "#{@pdf_name}_#{page}.txt")
-      run "pdftotext -enc UTF-8 -f #{page} -l #{page} #{ESCAPE[pdf]} #{ESCAPE[text_path]} 2>&1"
+      run "pdftotext -enc UTF-8 -f #{page} -l #{page} #{ESCAPE[pdf]} #{ESCAPE[text_path]} 2>&1", "", DEFAULT_TIMEOUT
       unless @forbid_ocr
         @pages_to_ocr.push(page) if File.read(text_path).length < MIN_TEXT_PER_PAGE
       end
